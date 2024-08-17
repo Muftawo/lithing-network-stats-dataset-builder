@@ -1,13 +1,13 @@
 # Bitcoin Lightning Network Stats Dataset Builder
 
-This project is designed to fetch and sync Bitcoin Lightning Network statistics from Mempool.space and store them in a CSV dataset. The service retrieves data via the Mempool.space API, processes it, and saves it to a local file for further analysis.
+This project is designed to fetch and sync Bitcoin Lightning Network statistics from Mempool.space and store them in a CSV dataset. The service retrieves data via the Mempool.space API, processes it, and saves it to a local file for data science purposes.
 
 ## Usage
 
 1. Clone the repository:
 
    ```bash
-   git clone https://github.com/muftwo/lightning-network-dataset-stats-builder.git
+   git clone https://github.com/Muftawo/lithing-network-stats-dataset-builder.git
    cd bitcoin-lightning-stats-builder
    ```
 
