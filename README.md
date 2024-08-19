@@ -1,6 +1,11 @@
-# Bitcoin Lightning Network Stats Dataset Builder
+# *Bitcoin Lightning Network Stats Dataset Builder*
 
-This project is designed to fetch and sync Bitcoin Lightning Network statistics from Mempool.space and store them in a CSV dataset. The service retrieves data via the Mempool.space API, processes it, and saves it to a local file for data science purposes.
+
+
+# Overview
+This is simple poject designed to fetch and sync Bitcoin Lightning Network statistics from Mempool.space public api and stored as a CSV for futher analysis. 
+
+The purpose of this dataset is to capture key metrics that reflect the activity and growth of the Bitcoin Lightning Network over time.
 
 ## Usage
 
@@ -22,4 +27,37 @@ This project is designed to fetch and sync Bitcoin Lightning Network statistics 
    tail -f logs/logs.log
    ```
 
-4.
+
+#
+
+## Project Structure
+
+```
+lightning_network_stats_dataset_builder/
+└───data/
+    ├──dataset.csv <- Dataset File
+    logs/
+    ├──...
+    output/
+    ├──dataset.csv <- Dataset File
+    src/
+    ├──...
+     test/
+    ├──...
+    .gitignore
+    pyproject.toml
+    README.md
+```
+| Name | Type | Description
+| ---- | ---- | -----------
+| added | int | The timestamp in milliseconds when the record was added.
+| channel_count | int | The total number of channels available.
+| total_capacity | int | The total capacity of the network in BTC.
+| tor_nodes | int | The total number of nodes running the lightning network over TOR (Anonymous).
+| clearnet_nodes | int | The total number of nodes exposing their public IP.
+| unannounced_nodes | int | An unannounced node can only be seen by the parties that are involved in the channel.
+| clearnet_tor_nodes | int | Nodes running an implementation of Lightning in a dual stack environment making some features public and others private.
+
+
+#
+## Dataset Schema
