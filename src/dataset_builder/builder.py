@@ -1,81 +1,91 @@
 import csv
+import logging
 import os
-import time
-from typing import Dict, List, Tuple
+from typing import Dict, List
 
-from external_apis.mempool_space import MempoolSpaceService
+from data_request.mempool_space import MempoolSpaceApiRequest
+
+CSV_HEADER = [
+    "added",
+    "channel_count",
+    "total_capacity",
+    "tor_nodes",
+    "clearnet_nodes",
+    "unannounced_nodes",
+    "clearnet_tor_nodes",
+]
 
 
-class DatasetBuilderService:
-    def __init__(self):
-
-        self.dataset_path = "data/dataset.csv"
-
-        self._mempool_space = MempoolSpaceService()
-
+class DatasetBuilder:
+    def __init__(
+        self,
+        dataset_path: str = "data/dataset.csv",
+    ):
+        self.dataset_path = dataset_path
+        self._mempool_space = MempoolSpaceApiRequest()
         self.initialize_dataset_file()
 
-    def sync(self):
-        latest_timestamp, raw_dataset = self.load_dataset_file()
+    def initialize_dataset_file(self) -> None:
+        if not os.path.exists(self.dataset_path):
+            os.makedirs(os.path.dirname(self.dataset_path), exist_ok=True)
+            self._write_csv_header()
 
-        new_records = self.get_dataset_items(latest_timestamp)
+    def _write_csv_header(self) -> None:
+        try:
+            with open(self.dataset_path, mode="w", newline="") as file:
+                writer = csv.writer(file)
+                writer.writerow(CSV_HEADER)
+            logging.info("Initialized new dataset file with headers.")
+        except IOError as e:
+            logging.error(f"Failed to write CSV header: {e}")
 
-        if new_records:
-            # If the file is empty, add the heading
-            if not raw_dataset:
-                raw_dataset = ",".join(new_records[0].keys())
+    def load_latest_timestamp(self) -> int:
+        if not os.path.exists(self.dataset_path):
+            return 0
+        try:
+            with open(self.dataset_path, mode="r") as file:
+                lines = file.readlines()
+                if len(lines) <= 1:
+                    return 0
+                latest_timestamp = int(lines[-1].split(",")[0])
+                logging.debug(f"Loaded latest timestamp: {latest_timestamp}")
+                return latest_timestamp
+        except IOError as e:
+            logging.error(f"Failed to load latest timestamp: {e}")
+            return 0
 
-            # Add the new records to the raw dataset
-            raw_dataset += "".join(
-                f"\n{','.join(map(str, record.values()))}" for record in new_records
-            )
+    def update_dataset_file(self, records: List[Dict[str, int]]) -> None:
+        try:
+            with open(self.dataset_path, mode="a", newline="") as file:
+                writer = csv.writer(file)
+                for record in records:
+                    writer.writerow(
+                        [
+                            record["added"],
+                            record["channel_count"],
+                            record["total_capacity"],
+                            record["tor_nodes"],
+                            record["clearnet_nodes"],
+                            record["unannounced_nodes"],
+                            record["clearnet_tor_nodes"],
+                        ]
+                    )
+            logging.info(f"Updated dataset file with {len(records)} new records.")
+        except IOError as e:
+            logging.error(f"Failed to update dataset file: {e}")
 
-            # Update the dataset file
-            self.update_dataset_file(raw_dataset)
-        else:
-            print("No new records")
-
-    def get_dataset_items(self, latest_timestamp: int) -> List[Dict[str, any]]:
-        # Retrieve raw records
+    def get_new_records(self, latest_timestamp: int) -> List[Dict[str, int]]:
         records = self._mempool_space.get_lightning_network_stats()
-
-        # Sort the records in ascending order by timestamp
-        records.sort(key=lambda x: x["added"])
-
-        # Convert timestamps to milliseconds and filter new records
-        return [
-            {**record, "added": record["added"] * 1000}
-            for record in records
-            if record["added"] * 1000 > latest_timestamp
+        new_records = [
+            record for record in records if record["added"] > latest_timestamp
         ]
+        logging.info(f"Retrieved {len(new_records)} new records from Mempool.space.")
+        return new_records
 
-    def initialize_dataset_file(self):
-        # Check if the dataset file exists
-        if not self.path_exists(self.dataset_path):
-            # Create the directory if it doesn't exist
-            dir_name = os.path.dirname(self.dataset_path)
-            if not self.path_exists(dir_name):
-                os.makedirs(dir_name)
-
-            # Create an empty CSV file
-            self.update_dataset_file("")
-
-    def update_dataset_file(self, new_data_state: str):
-        with open(self.dataset_path, "w", encoding="utf-8") as file:
-            file.write(new_data_state)
-
-    def path_exists(self, file_or_dir_path: str) -> bool:
-        return os.path.exists(file_or_dir_path)
-
-    def load_dataset_file(self) -> Tuple[int, str]:
-        if not self.path_exists(self.dataset_path):
-            return 0, ""
-
-        with open(self.dataset_path, "r", encoding="utf-8") as file:
-            raw_dataset = file.read()
-
-        if raw_dataset:
-            latest_timestamp = int(raw_dataset.strip().split("\n")[-1].split(",")[0])
-            return latest_timestamp, raw_dataset
+    def sync(self) -> None:
+        latest_timestamp = self.load_latest_timestamp()
+        new_records = self.get_new_records(latest_timestamp)
+        if new_records:
+            self.update_dataset_file(new_records)
         else:
-            return 0, ""
+            logging.info("No new records to add.")
