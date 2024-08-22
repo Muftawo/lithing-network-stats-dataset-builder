@@ -1,5 +1,5 @@
 # *Bitcoin Lightning Network Stats Dataset Builder*
-
+The Bitcoin Lightning Network is a second-layer solution built on top of the Bitcoin blockchain, designed to enable faster and cheaper transactions. It addresses Bitcoin's scalability issues by allowing users to conduct off-chain transactions through payment channels.
 
 
 # Overview
